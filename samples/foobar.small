@@ -1,0 +1,6 @@
+def foo():
+  "foo" + a
+  
+def main():
+  b = 3
+  print(foo())

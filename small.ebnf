@@ -1,0 +1,143 @@
+directives:
+  autoalias
+
+imports:
+  fr.umlv.small.grammar.ast.Token
+  fr.umlv.small.grammar.ast.ScriptNode
+  fr.umlv.small.grammar.ast.MemberDefNode
+  fr.umlv.small.grammar.ast.ClassDefNode
+  fr.umlv.small.grammar.ast.FunctionDefNode
+  fr.umlv.small.grammar.ast.FieldDefNode
+  fr.umlv.small.grammar.ast.TypeNode
+  fr.umlv.small.grammar.ast.FieldInitNode
+  fr.umlv.small.grammar.ast.ExprNode
+  java.util.List
+  
+priorities:
+ dot = 9 left
+ unary = 8 left
+ star = 7 left
+ plus = 6 left
+ eq = 5 left
+ and = 4 left
+ is = 3 nonassoc
+ if = 2 right
+ assign = 1 right
+
+tokens:
+  plus= '\+'                   [plus]
+  minus= '-'                   [plus]
+  star = '\*'                  [star]
+  slash = '\/'                 [star]
+  mod = '%'                    [star]
+  assign= '='                  [assign]
+  eq = '=='                    [eq]
+  ne = '!='                    [eq]
+  lt= '<'                      [eq]
+  le = '<='                    [eq]
+  gt = '>'                     [eq]
+  ge = '>='                    [eq]
+  dot = '\.'                   [dot]
+  bang = '!' 
+  or = '\|'  
+  _if = '\?'                   [if]  
+  is = '~'                     [is]               
+  colon= ':'
+  comma =  ','
+  eol = '\n'
+  lpar = '\('
+  rpar = '\)' 
+  lcurl = '\{'
+  rcurl = '\}'
+  
+  classdef = 'classdef'
+  def = 'def'
+  
+  bool = "true|false"
+  id = "([a-z]|[A-Z]|_)([a-z]|[A-Z]|[0-9]|_)*"
+  text = "\u0022([^\u0022])*\u0022"
+  integer = "[0-9]+"
+ 
+blanks:
+ space = "( |\t|\r|\n)"
+
+comments:
+ comment = "\/\/([^\r\n])*(\r)?\n"
+ 
+types:
+ 'id': Token<String>
+ 'text': Token<String>
+ 'integer': Token<Integer>
+ 'bool': Token<Boolean>
+ 
+ script: ScriptNode
+ member: MemberDefNode
+ _class: ClassDefNode
+ function: FunctionDefNode
+ field: FieldDefNode
+ init: FieldInitNode
+ expr: ExprNode
+ instr: ExprNode
+ _else: List<ExprNode>
+
+starts:
+  script
+
+productions:
+ script = member*  { script }
+        ;
+ 
+ member = _class       { class_member }
+        | function     { function_member }
+        ;
+      
+ _class = 'classdef' 'id' '(' field/'comma'* ')'   { _class }
+       ;
+       
+ field = 'id'   { field }
+       ;
+      
+ function =  'def' 'id' '(' 'id'/'comma'* ')' ':' instr*  { function }
+          ;    
+  
+ instr = expr 'eol'   { instr }
+       ; 
+  
+ init = 'id' '=' expr    { init }
+      ; 
+  
+ _else = instr+  { else_instrs }
+       | expr    { else_expr }
+       |         { else_empty }
+       ; 
+  
+ expr = 'integer'                                             { expr_integer }
+      | 'bool'                                                { expr_bool }
+      | 'text'                                                { expr_text }
+      | 'id'                                                  { expr_var_access }      
+      | '(' expr ')'                                          { expr_parens }
+      | 'id' '=' expr                          [assign]       { expr_var_assignment }
+      | expr '.' 'id'                                         { expr_field_access }
+      | 'id' '(' expr/'comma'* ')'                            { expr_function_call }
+      | expr '.' 'id' '(' expr/'comma'* ')'                   { expr_method_call }
+      | expr'.' 'id' '=' expr                 [assign]        { expr_method_assignment }
+      | 'id' '{' init/'comma'* '}'                            { expr_allocation }
+      | expr '?' '(' instr+ 'or' _else ')'     [if]           { expr_if }
+      | expr '?' '(' expr 'or' _else ')'       [if]           { expr_if_expr }
+      | '-' expr                               [unary]        { expr_unary_minus }
+      | '+' expr                               [unary]        { expr_unary_plus }
+      | '!' expr                               [unary]        { expr_unary_not }
+      | expr '~' 'id'                          [is]           { expr_is }
+      | expr '+' expr                          [plus]         { expr_binary_add }
+      | expr '-' expr                          [plus]         { expr_binary_sub }
+      | expr '*' expr                          [star]         { expr_binary_mul }
+      | expr '/' expr                          [star]         { expr_binary_div }
+      | expr '%' expr                          [star]         { expr_binary_mod }
+      | expr '==' expr                         [eq]           { expr_binary_eq }
+      | expr '!=' expr                         [eq]           { expr_binary_ne }
+      | expr '<' expr                          [eq]           { expr_binary_lt }
+      | expr '<=' expr                         [eq]           { expr_binary_le }
+      | expr '>' expr                          [eq]           { expr_binary_gt }
+      | expr '>=' expr                         [eq]           { expr_binary_ge }
+      ;
+   

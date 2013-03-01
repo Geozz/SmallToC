@@ -1,0 +1,5 @@
+def fib(n):
+  n < 2? (1 | fib(n - 1) + fib(n - 2))
+  
+def main():
+  print(fib(7))

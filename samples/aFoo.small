@@ -1,0 +1,6 @@
+classdef Point ( x, y )
+          
+def main():
+  l = "Hello" 
+  p = Point(1, 2)
+  print(l)

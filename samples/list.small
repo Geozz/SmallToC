@@ -1,0 +1,31 @@
+classdef cons(x, next)
+
+classdef nil ()
+  
+def size(l):
+  l ~ nil ?(
+    0
+  |
+    size(l)
+  )
+  
+def append(l, x):
+  l ~ nil ?(
+    cons(x, nil())
+  |
+    cons(l.x, append(l.next, x))
+  )
+  
+def display(l):
+  l ~ cons ?(
+    print(l.x)
+    display(l.next)
+  |)
+  
+def main():
+  l = cons(2, cons(3, nil()))
+  print(size(l))
+  print(l)
+  l2 = append(l, 4)
+  print(l2)
+  

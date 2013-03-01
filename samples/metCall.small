@@ -1,0 +1,17 @@
+classdef Foo( x )
+
+classdef Fii( x )
+
+def bar(foo):
+  print(foo.x)
+
+def hello():
+  print("Hello")
+
+def main():
+  hello()
+
+  foo = Foo(42)
+  Foo.bar = bar
+  foo.bar()
+
