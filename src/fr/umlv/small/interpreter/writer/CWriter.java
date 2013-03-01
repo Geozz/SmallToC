@@ -87,6 +87,7 @@ public class CWriter {
 		out.println("#include \"mylib.h\"");
 		out.println("#define TRUE (1)");
 		out.println("#define FALSE (0)");
+		out.println();
   }
 
 	public void writePrintf(List<String> format) {
@@ -97,5 +98,13 @@ public class CWriter {
 	  	out.print(s);
 	  }
 	  out.print("\\n\", ");
+  }
+
+	public void writeComma() {
+	  out.print(',');
+  }
+
+	public void writeSpace() {
+	  out.print(' ');
   }
 }

@@ -204,8 +204,12 @@ public class SmallToC {
 					expr.accept(PRINT_VISITOR, types);
 				}
 				writer.writePrintf(types);
-				for (ExprNode expr: arguments) {
-					expr.accept(this, data);
+				for (int i = 0; i < arguments.size(); i++) {
+					arguments.get(i).accept(this, data);
+					if (i != arguments.size() - 1) {
+						writer.writeComma();
+						writer.writeSpace();
+					}
 				}
 				writer.writeEndFunctionCall();
 				return null;
