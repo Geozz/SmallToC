@@ -12,6 +12,7 @@ import java.util.Set;
 import fr.umlv.small.grammar.ast.BinaryExprNode;
 import fr.umlv.small.grammar.ast.ClassDefNode;
 import fr.umlv.small.grammar.ast.ConstExprNode;
+import fr.umlv.small.grammar.ast.ConstExprNode.ConstKind;
 import fr.umlv.small.grammar.ast.ExprNode;
 import fr.umlv.small.grammar.ast.ExprNodeVisitor;
 import fr.umlv.small.grammar.ast.FieldAccessExprNode;
@@ -34,6 +35,7 @@ import fr.umlv.small.interpreter.writer.CWriter;
 public class SmallToC {
 	private final Map<String, Clazz> classMap;
 	private final HashMap<String, FunctionDefNode> functionDefMap;
+	private final HashMap<String, ConstKind> varKindMap = new HashMap<>();
 	private final CWriter writer;
 
 	// helper method
@@ -179,13 +181,21 @@ public class SmallToC {
 
 		@Override
     public Void visitVarAccess(VarAccessExprNode node, Void data) {
-	    // TODO Auto-generated method stub
+	    writer.writeVarAccess(node.getName());
 	    return null;
     }
 
 		@Override
     public Void visitVarAssignment(VarAssignmentExprNode node, Void data) {
-	    // TODO Auto-generated method stub
+			String name = node.getName();
+			ConstKind old = varKindMap.put(name, node.getExpr().accept(kindVisitor, null));
+			ConstKind newType = varKindMap.get(name);
+			if (old == null || !old.equals(newType)) {
+				writer.writeType(newType);
+			}
+	    writer.writeBeginAssignement(name);
+	    node.getExpr().accept(this, data);
+	    writer.writeEndAssignement();
 	    return null;
     }
 
@@ -201,7 +211,7 @@ public class SmallToC {
 			if (node.getName().equals("print")) {
 				List<String> types = new ArrayList<>();
 				for (ExprNode expr: arguments) {
-					expr.accept(PRINT_VISITOR, types);
+					expr.accept(printVisitor, types);
 				}
 				writer.writePrintf(types);
 				for (int i = 0; i < arguments.size(); i++) {
@@ -243,7 +253,82 @@ public class SmallToC {
 
 	};
 
-	private static final ExprNodeVisitor<List<String>, Void> PRINT_VISITOR = new ExprNodeVisitor<List<String>, Void>() {
+	private final ExprNodeVisitor<Void, ConstKind> kindVisitor = new ExprNodeVisitor<Void, ConstExprNode.ConstKind>() {
+		
+		@Override
+		public ConstKind visitVarAssignment(VarAssignmentExprNode node, Void data) {
+			return node.getExpr().accept(this, data);
+		}
+		
+		@Override
+		public ConstKind visitVarAccess(VarAccessExprNode node, Void data) {
+			ConstKind constKind = varKindMap.get(node.getName());
+			if (constKind == null) {
+				throw new UnsupportedOperationException();
+			}
+			return constKind;
+		}
+		
+		@Override
+		public ConstKind visitUnary(UnaryExprNode node, Void data) {
+			return node.getExpr().accept(this, data);
+		}
+		
+		@Override
+		public ConstKind visitMethodCall(MethodCallExprNode node, Void data) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+		@Override
+		public ConstKind visitMethodAssignment(MethodAssignmentExprNode node, Void data) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+		@Override
+		public ConstKind visitIs(IsExprNode node, Void data) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+		@Override
+		public ConstKind visitInstanceAllocation(InstanceAllocationExprNode node, Void data) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+		@Override
+		public ConstKind visitIf(IfExprNode node, Void data) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+		@Override
+		public ConstKind visitFunctionCall(FunctionCallExprNode node, Void data) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+		@Override
+		public ConstKind visitFieldAccess(FieldAccessExprNode node, Void data) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+		@Override
+		public ConstKind visitConst(ConstExprNode node, Void data) {
+			return node.getKind();
+		}
+		
+		@Override
+		public ConstKind visitBinary(BinaryExprNode node, Void data) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	};
+	
+	private final ExprNodeVisitor<List<String>, Void> printVisitor = new ExprNodeVisitor<List<String>, Void>() {
 
 		private Void visitBlock(List<ExprNode> exprs, List<String> data) {
 			for (ExprNode expr : exprs) {
@@ -254,7 +339,13 @@ public class SmallToC {
 		
 		@Override
     public Void visitConst(ConstExprNode node, List<String> data) {
-	    switch (node.getKind()) {
+	    ConstKind kind = node.getKind();
+			constHelper(data, kind);
+	    return null;
+    }
+
+		private void constHelper(List<String> data, ConstKind kind) {
+	    switch (kind) {
 	    case INTEGER:
 	    case BOOL:
 	    	data.add("%d");
@@ -263,8 +354,7 @@ public class SmallToC {
 	    	data.add("%s");
 	    	break;
 	    }
-	    return null;
-    }
+		}
 
 		@Override
     public Void visitUnary(UnaryExprNode node, List<String> data) {
@@ -295,7 +385,8 @@ public class SmallToC {
 
 		@Override
     public Void visitVarAccess(VarAccessExprNode node, List<String> data) {
-	    // TODO
+	    ConstKind constKind = varKindMap.get(node.getName());
+	    constHelper(data, constKind);
 	    return null;
     }
 

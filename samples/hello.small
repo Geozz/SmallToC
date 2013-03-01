@@ -1,4 +1,6 @@
 def main():
+  a = "Hello"
+  print(a)
   print(1, " ", 1)
   print(true)
   print("Hello")

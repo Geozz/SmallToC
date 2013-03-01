@@ -3,6 +3,8 @@ package fr.umlv.small.interpreter.writer;
 import java.io.PrintStream;
 import java.util.List;
 
+import fr.umlv.small.grammar.ast.ConstExprNode.ConstKind;
+
 public class CWriter {
 	private final PrintStream out;
 	private int tabs = 0;
@@ -106,5 +108,33 @@ public class CWriter {
 
 	public void writeSpace() {
 	  out.print(' ');
+  }
+
+	public void writeBeginAssignement(String name) {
+		writeTabs();
+		tab = false;
+	  out.print(name + " = ");
+  }
+
+	public void writeEndAssignement() {
+		tab = true;
+	  out.println(";");
+  }
+
+	public void writeVarAccess(String name) {
+	  out.print(name);
+  }
+
+	public void writeType(ConstKind kind) {
+		writeTabs();
+	  switch (kind) {
+		case INTEGER:
+		case BOOL:
+			out.print("int ");
+			break;
+		default: //case TEXT:
+			out.print("char* ");
+			break;
+		}
   }
 }
