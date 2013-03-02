@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 
 import fr.umlv.small.grammar.ast.ASTFactory;
 import fr.umlv.small.grammar.ast.ScriptNode;
-import fr.umlv.small.interpreter.full.SmallToC;
+import fr.umlv.small.interpreter.smallToC.SmallToC;
 
 public class SmallToCMain {
   private static Reader reader(String[] args) throws IOException {
@@ -18,7 +18,7 @@ public class SmallToCMain {
     }
     return Files.newBufferedReader(Paths.get(args[0]), Charset.defaultCharset());
   }
-  
+
   public static void main(String[] args) throws IOException {
     ScriptNode script;
     try(Reader reader = reader(args)) {

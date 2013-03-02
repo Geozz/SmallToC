@@ -110,19 +110,33 @@ public class CWriter {
 	  out.print(' ');
   }
 
-	public void writeBeginAssignement(String name) {
+	public void writeBeginAssignement(String name, ConstKind kind) {
 		writeTabs();
 		tab = false;
-	  out.print(name + " = ");
+	  out.print(name + kindToString(kind) + " = ");
   }
+
+	private String kindToString(ConstKind kind) {
+	  String s;
+	  switch (kind) {
+		case INTEGER:
+		case BOOL:
+			s = "I";
+			break;
+		default: //case TEXT:
+			s = "S";
+			break;
+		}
+		return s;
+	}
 
 	public void writeEndAssignement() {
 		tab = true;
 	  out.println(";");
   }
 
-	public void writeVarAccess(String name) {
-	  out.print(name);
+	public void writeVarAccess(String name, ConstKind constKind) {
+	  out.print(name + kindToString(constKind));
   }
 
 	public void writeType(ConstKind kind) {
