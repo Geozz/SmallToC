@@ -2,13 +2,22 @@
 #define TRUE (1)
 #define FALSE (0)
 
-int main() {
-  char*   aS = "Hello";
-  int   aI = 1;
-  printf("%d\n", aI);
-  aI = 2;
-  printf("%d\n", aI);
-  printf("%d%s%d\n", 1, " ", 1);
-  printf("%d\n", TRUE);
-  return   printf("%s\n", "Hello");
+int printerS(char* aS) {
+  return   printf("%s\n", aS);
 }
+
+int hello() {
+  return   printerS("Hello");
+}
+
+int printerI(int aI) {
+  return   printf("%d\n", aI);
+}
+
+int main() {
+  hello();
+  printerI(1);
+  printerI(2);
+  return   printerS("Hey apple");
+}
+

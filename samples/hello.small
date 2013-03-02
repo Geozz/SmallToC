@@ -1,10 +1,11 @@
-def main():
-  a = "Hello"
-  a = 1
+def printer(a):
   print(a)
-  a = 2
-  print(a)
-  print(1, " ", 1)
-  print(true)
-  print("Hello")
 
+def hello():
+  printer("Hello")
+
+def main():
+  hello()
+  printer(1)
+  printer(2)
+  printer("Hey apple")

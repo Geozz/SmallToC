@@ -4,11 +4,13 @@ import java.io.PrintStream;
 import java.util.List;
 
 import fr.umlv.small.grammar.ast.ConstExprNode.ConstKind;
+import fr.umlv.small.grammar.ast.FunctionDefNode;
 
 public class CWriter {
 	private final PrintStream out;
-	private int tabs = 0;
+	private int tabs = 1;
 	private boolean tab = true;
+	private StringBuilder str = new StringBuilder();
 
 	public CWriter(PrintStream out) {
 	    this.out = out;
@@ -16,23 +18,21 @@ public class CWriter {
 
 	private void writeTabs() {
 		for (int i = 0; i < tabs; i++) {
-			out.print("  ");
+			str.append("  ");
 		}
   }
 	
 	public void writeReturn() {
 		writeTabs();
-		out.print("return ");
-		
+		str.append("return ");
 	}
 
 	public void writeSimpleReturn() {
 		writeTabs();
-		out.println("return;");
+		str.append("return;").append("\n");
 	}
 
 	public void writeSignature(String name, int size) {
-		writeTabs();
 	  StringBuilder sb = new StringBuilder();
 	  sb = sb.append("int ").append(name).append("(");
 	  for (int i = 0; i < size; i++) {
@@ -43,46 +43,63 @@ public class CWriter {
 	  	}
 	  }
 	  sb = sb.append(") {");
-	  out.println(sb);
-	  tabs++;
+	  str.append(sb).append("\n");
+  }
+	
+	public void writeSignatureWithKinds(FunctionDefNode funDef, List<ConstKind> kinds) {
+		String name = funDef.getName();
+		List<String> parameters = funDef.getParameters();
+	  StringBuilder sb = new StringBuilder();
+	  sb = sb.append("int ").append(name).append(kindsToString(kinds)).append("(");
+	  int size = kinds.size();
+		for (int i = 0; i < size; i++) {
+	  	ConstKind kind = kinds.get(i);
+			sb.append(kindToType(kind));
+	  	sb.append(parameters.get(i));
+	  	sb.append(kindToString(kind));
+	  	if (i != size - 1) {
+	  		sb.append(", ");
+	  	}
+	  }
+	  sb.append(") {");
+	  str.append(sb).append("\n");
   }
 
 	public void writeEndBlock() {
-		tabs--;
-		writeTabs();
-	  out.println("}");
+		str.append("}").append("\n\n");
   }
 
-	public void writeBeginFunctionCall(String name) {
+	public void writeBeginFunctionCall(String name, List<ConstKind> kinds) {
 		writeTabs();
 		tab = false;
-	  out.print(name + "(");
+		
+		str.append(name + kindsToString(kinds) + "(");
   }
 	
 	public void writeEndFunctionCall() {
 		tab = true;
-		out.println(");");
+		str.append(");").append("\n");
   }
 
 	public void writeIntegerConst(Object value) {
 		if (tab) {
 			writeTabs();
 		}
-	  out.print(value);
+		str.append(value);
   }
 	
 	public void writeBoolConst(Object value) {
 		if (tab) {
 			writeTabs();
 		}
-	  out.print(value.toString().toUpperCase());
+		str.append(value.toString().toUpperCase());
   }
 
 	public void writerConstText(Object value) {
 		if (tab) {
 			writeTabs();
 		}
-	  out.print("\"" + value + "\"");
+		str.append("\"" + value + "\"");
   }
 
 	public void writeHeaders() {
@@ -95,27 +112,37 @@ public class CWriter {
 	public void writePrintf(List<String> format) {
 		writeTabs();
 		tab = false;
-	  out.print("printf(\"");
+		str.append("printf(\"");
 	  for (String s: format) {
-	  	out.print(s);
+	  	str.append(s);
 	  }
-	  out.print("\\n\", ");
+	  str.append("\\n\", ");
   }
 
 	public void writeComma() {
-	  out.print(',');
+		str.append(',');
   }
 
 	public void writeSpace() {
-	  out.print(' ');
+		str.append(' ');
   }
 
 	public void writeBeginAssignement(String name, ConstKind kind) {
 		writeTabs();
 		tab = false;
-	  out.print(name + kindToString(kind) + " = ");
+		str.append(name + kindToString(kind) + " = ");
   }
 
+	private String kindToType(ConstKind kind) {
+		switch (kind) {
+		case INTEGER:
+		case BOOL:
+			return "int ";
+		default: //case TEXT:
+			return "char* ";
+		}
+	}
+	
 	private String kindToString(ConstKind kind) {
 	  String s;
 	  switch (kind) {
@@ -129,26 +156,40 @@ public class CWriter {
 		}
 		return s;
 	}
+	
+	private String kindsToString(List<ConstKind> kinds) {
+		StringBuilder sb = new StringBuilder();
+		
+		for (ConstKind kind: kinds) {
+			sb.append(kindToString(kind));
+		}
+
+		return sb.toString();
+	}
 
 	public void writeEndAssignement() {
 		tab = true;
-	  out.println(";");
+		str.append(";").append("\n");
   }
 
 	public void writeVarAccess(String name, ConstKind constKind) {
-	  out.print(name + kindToString(constKind));
+		str.append(name + kindToString(constKind));
   }
 
 	public void writeType(ConstKind kind) {
 		writeTabs();
-	  switch (kind) {
-		case INTEGER:
-		case BOOL:
-			out.print("int ");
-			break;
-		default: //case TEXT:
-			out.print("char* ");
-			break;
-		}
+	  str.append(kindToType(kind)).append(" ");
+  }
+
+	public StringBuilder getStringBuilder() {
+	  return str;
+  }
+	
+	public void setStringBuilder(StringBuilder sb) {
+	  str = sb;
+  }
+
+	public void writeStringBuilder() {
+	  out.append(str.toString());
   }
 }
