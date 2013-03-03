@@ -4,6 +4,8 @@ def printer(a):
 def hello():
   printer("Hello")
 
+
+
 def main():
   hello()
   printer(1)

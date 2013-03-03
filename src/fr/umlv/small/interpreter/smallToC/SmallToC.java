@@ -16,7 +16,6 @@ import fr.umlv.small.grammar.ast.ExprNode;
 import fr.umlv.small.grammar.ast.ExprNodeVisitor;
 import fr.umlv.small.grammar.ast.FieldAccessExprNode;
 import fr.umlv.small.grammar.ast.FieldDefNode;
-import fr.umlv.small.grammar.ast.FieldInitNode;
 import fr.umlv.small.grammar.ast.FunctionCallExprNode;
 import fr.umlv.small.grammar.ast.FunctionDefNode;
 import fr.umlv.small.grammar.ast.IfExprNode;
@@ -82,12 +81,9 @@ public class SmallToC {
 
 	public void start() {
 		/*
-		for (Entry<String, FunctionDefNode> entry : functionDefMap.entrySet()) {
-			if (!entry.getKey().equals("main")) {
-				rewrite(entry.getValue());
-			}
-		}
-		*/
+		 * for (Entry<String, FunctionDefNode> entry : functionDefMap.entrySet()) {
+		 * if (!entry.getKey().equals("main")) { rewrite(entry.getValue()); } }
+		 */
 
 		FunctionDefNode mainDefNode = functionDefMap.get("main");
 		rewrite(mainDefNode);
@@ -117,7 +113,7 @@ public class SmallToC {
 		Function function = new Function(functionDef);
 		return function;
 	}
-	
+
 	private void rewriteWithKinds(FunctionDefNode functionDef, List<ConstKind> kinds) {
 		LinkedHashSet<String> varNames = new LinkedHashSet<>();
 		// add parameters
@@ -137,7 +133,7 @@ public class SmallToC {
 		for (int i = 0; i < parameters.size(); i++) {
 			varKindMap.put(parameters.get(i), kinds.get(i));
 		}
-		
+
 		writer.writeSignatureWithKinds(functionDef, kinds);
 
 		Env env = new Env(varMap);
@@ -145,7 +141,7 @@ public class SmallToC {
 
 		writer.writeEndBlock();
 		varKindMap = tmp;
-  }
+	}
 
 	private void rewriteBlock(List<ExprNode> exprs, Env env) {
 		for (int i = 0; i < exprs.size(); i++) {
@@ -270,9 +266,9 @@ public class SmallToC {
 
 			List<ConstKind> kinds = new ArrayList<>();
 			for (ExprNode expr : arguments) {
-				kinds.add(expr.accept(kindVisitor, data));
+				kinds.add(expr.accept(kindVisitor, varKindMap));
 			}
-			
+
 			List<List<ConstKind>> list = functionCallMap.get(name);
 			if (list == null) {
 				list = new ArrayList<>();
@@ -286,7 +282,7 @@ public class SmallToC {
 				writer.writeEndFunctionCall();
 				return null;
 			}
-			
+
 			functionCallMap.get(name).add(kinds);
 
 			// Create the called function and call it.
@@ -295,7 +291,7 @@ public class SmallToC {
 			rewriteWithKinds(functionDefMap.get(node.getName()), kinds);
 			writer.writeStringBuilder();
 			writer.setStringBuilder(caller);
-			
+
 			writer.writeBeginFunctionCall(name, kinds);
 			for (ExprNode expr : arguments) {
 				expr.accept(this, data);
@@ -324,80 +320,19 @@ public class SmallToC {
 
 	};
 
-	private final ExprNodeVisitor<Void, ConstKind> kindVisitor = new ExprNodeVisitor<Void, ConstExprNode.ConstKind>() {
-
-		@Override
-		public ConstKind visitVarAssignment(VarAssignmentExprNode node, Void data) {
-			return node.getExpr().accept(this, data);
+	private void constHelper(List<String> data, ConstKind kind) {
+		switch (kind) {
+		case INTEGER:
+		case BOOL:
+			data.add("%d");
+			break;
+		default: // case TEXT:
+			data.add("%s");
+			break;
 		}
+	}
 
-		@Override
-		public ConstKind visitVarAccess(VarAccessExprNode node, Void data) {
-			ConstKind constKind = varKindMap.get(node.getName());
-			if (constKind == null) {
-				throw new UnsupportedOperationException();
-			}
-			return constKind;
-		}
-
-		@Override
-		public ConstKind visitUnary(UnaryExprNode node, Void data) {
-			return node.getExpr().accept(this, data);
-		}
-
-		@Override
-		public ConstKind visitMethodCall(MethodCallExprNode node, Void data) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public ConstKind visitMethodAssignment(MethodAssignmentExprNode node, Void data) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public ConstKind visitIs(IsExprNode node, Void data) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public ConstKind visitInstanceAllocation(InstanceAllocationExprNode node, Void data) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public ConstKind visitIf(IfExprNode node, Void data) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public ConstKind visitFunctionCall(FunctionCallExprNode node, Void data) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public ConstKind visitFieldAccess(FieldAccessExprNode node, Void data) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public ConstKind visitConst(ConstExprNode node, Void data) {
-			return node.getKind();
-		}
-
-		@Override
-		public ConstKind visitBinary(BinaryExprNode node, Void data) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-	};
+	private final ExprNodeVisitor<Map<String, ConstKind>, ConstKind> kindVisitor = new KindVisitor();
 
 	private final ExprNodeVisitor<List<String>, Void> printVisitor = new ExprNodeVisitor<List<String>, Void>() {
 
@@ -413,18 +348,6 @@ public class SmallToC {
 			ConstKind kind = node.getKind();
 			constHelper(data, kind);
 			return null;
-		}
-
-		private void constHelper(List<String> data, ConstKind kind) {
-			switch (kind) {
-			case INTEGER:
-			case BOOL:
-				data.add("%d");
-				break;
-			default: // case TEXT:
-				data.add("%s");
-				break;
-			}
 		}
 
 		@Override
@@ -498,86 +421,7 @@ public class SmallToC {
 		}
 	};
 
-	private static final ExprNodeVisitor<Set<String>, Void> DECLARED_VAR_VISITOR = new ExprNodeVisitor<Set<String>, Void>() {
-		@Override
-		public Void visitConst(ConstExprNode node, Set<String> data) {
-			return null;
-		}
-
-		@Override
-		public Void visitUnary(UnaryExprNode node, Set<String> data) {
-			node.getExpr().accept(this, data);
-			return null;
-		}
-
-		@Override
-		public Void visitBinary(BinaryExprNode node, Set<String> data) {
-			node.getLeftExpr().accept(this, data);
-			node.getRightExpr().accept(this, data);
-			return null;
-		}
-
-		@Override
-		public Void visitIf(IfExprNode node, Set<String> data) {
-			node.getConditionExpr().accept(this, data);
-			declaredVarNames(node.getThenExprs(), data);
-			declaredVarNames(node.getElseExprs(), data);
-			return null;
-		}
-
-		@Override
-		public Void visitIs(IsExprNode node, Set<String> data) {
-			node.getExpr().accept(this, data);
-			return null;
-		}
-
-		@Override
-		public Void visitVarAccess(VarAccessExprNode node, Set<String> data) {
-			data.add(node.getName());
-			return null;
-		}
-
-		@Override
-		public Void visitVarAssignment(VarAssignmentExprNode node, Set<String> data) {
-			node.getExpr().accept(this, data);
-			data.add(node.getName());
-			return null;
-		}
-
-		@Override
-		public Void visitFieldAccess(FieldAccessExprNode node, Set<String> data) {
-			node.getExpr().accept(this, data);
-			return null;
-		}
-
-		@Override
-		public Void visitFunctionCall(FunctionCallExprNode node, Set<String> data) {
-			declaredVarNames(node.getArguments(), data);
-			return null;
-		}
-
-		@Override
-		public Void visitMethodCall(MethodCallExprNode node, Set<String> data) {
-			node.getReceiver().accept(this, data);
-			declaredVarNames(node.getArguments(), data);
-			return null;
-		}
-
-		@Override
-		public Void visitMethodAssignment(MethodAssignmentExprNode node, Set<String> data) {
-			node.getReceiver().accept(this, data);
-			node.getExpr().accept(this, data);
-			return null;
-		}
-
-		@Override
-		public Void visitInstanceAllocation(InstanceAllocationExprNode node, Set<String> data) {
-			for (FieldInitNode initNode : node.getFieldInits()) {
-				initNode.getExpr().accept(this, data);
-			}
-			return null;
-		}
-	};
+	private static final ExprNodeVisitor<Set<String>, Void> DECLARED_VAR_VISITOR = new VarVisitor();
 
 	public void writeHeaders() {
 		writer.writeHeaders();
